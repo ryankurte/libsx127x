@@ -145,9 +145,14 @@ typedef struct
 
 // Function prototypes
 typedef void Reset( void* ctx );
+
+typedef void SpiWrite( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* out, uint16_t out_len );
+typedef void SpiRead( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* in, uint16_t in_len );
+
+typedef void PinSet( void* ctx, bool value );
+typedef bool PinGet( void* ctx );
+
 typedef void DelayMs( void* ctx, uint32_t ms );
-typedef void WriteBuffer( void* ctx, uint8_t addr, uint8_t *buffer, uint8_t size );
-typedef void ReadBuffer( void* ctx, uint8_t addr, uint8_t *buffer, uint8_t size );
 
 /*!
  * Radio hardware and global parameters
@@ -158,14 +163,16 @@ typedef struct SX1276_s
     void* ctx;
     Reset *reset;
     DelayMs *delay_ms;
-    WriteBuffer *write_buffer;
-    ReadBuffer *read_buffer;
+
+    SpiWrite *spi_write;
+    SpiRead  *spi_read;
+
 } SX1276_t;
 
 /*!
  * Hardware IO IRQ callback function definition
  */
-typedef void ( DioIrqHandler )( void );
+typedef void ( DioIrqHandler )( SX1276_t* ctx );
 
 /*!
  * SX1276 definitions

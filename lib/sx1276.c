@@ -204,7 +204,7 @@ DioIrqHandler *DioIrq[] = { SX1276OnDio0Irq, SX1276OnDio1Irq,
 
 // TODO: this is fake for now
 typedef struct TimerEvent_s {
-      
+      int fake;
 } TimerEvent_t;
 
 /*!
@@ -225,6 +225,7 @@ void SX1276Init( SX1276_t* sx1276, RadioEvents_t *events )
     RadioEvents = events;
 
     // Initialize driver timeout timers
+    // TODO: re-work timers to be external
     TimerInit( &TxTimeoutTimer, SX1276OnTimeoutIrq );
     TimerInit( &RxTimeoutTimer, SX1276OnTimeoutIrq );
     TimerInit( &RxTimeoutSyncWord, SX1276OnTimeoutIrq );
@@ -235,7 +236,8 @@ void SX1276Init( SX1276_t* sx1276, RadioEvents_t *events )
 
     SX1276SetOpMode( sx1276, RF_OPMODE_SLEEP );
 
-    SX1276IoIrqInit( sx1276, DioIrq );
+    // Initialisation should occur outside driver
+    //SX1276IoIrqInit( sx1276, DioIrq );
 
     for( i = 0; i < sizeof( RadioRegsInit ) / sizeof( RadioRegisters_t ); i++ )
     {
@@ -1202,6 +1204,8 @@ int16_t SX1276ReadRssi( SX1276_t* sx1276, RadioModems_t modem )
     return rssi;
 }
 
+// This appears to be platform specific
+#if 0
 void SX1276SetOpMode( SX1276_t* sx1276, uint8_t opMode )
 {
     if( opMode == RF_OPMODE_SLEEP )
@@ -1222,6 +1226,7 @@ void SX1276SetOpMode( SX1276_t* sx1276, uint8_t opMode )
     }
     SX1276Write( sx1276, REG_OPMODE, (  SX1276Read( sx1276, REG_OPMODE ) & RF_OPMODE_MASK ) | opMode );
 }
+#endif
 
 void SX1276SetModem( SX1276_t* sx1276, RadioModems_t modem )
 {
@@ -1255,24 +1260,26 @@ void SX1276SetModem( SX1276_t* sx1276, RadioModems_t modem )
 
 void SX1276Write( SX1276_t* sx1276, uint8_t addr, uint8_t data )
 {
-    sx1276->write_buffer( sx1276->ctx,  addr, &data, 1 );
+    sx1276->spi_write( sx1276->ctx,  &addr, 1, &data, 1 );
 }
 
 uint8_t SX1276Read( SX1276_t* sx1276, uint8_t addr )
 {
     uint8_t data;
-    sx1276->read_buffer( sx1276->ctx,  addr, &data, 1 );
+    sx1276->spi_read( sx1276->ctx, &addr, 1, &data, 1 );
     return data;
 }
 
 void SX1276WriteFifo( SX1276_t* sx1276, uint8_t *buffer, uint8_t size )
 {
-    sx1276->write_buffer( sx1276->ctx,  0, buffer, size );
+    uint8_t addr = 0;
+    sx1276->spi_write( sx1276->ctx, &addr, 1, buffer, size );
 }
 
 void SX1276ReadFifo( SX1276_t* sx1276, uint8_t *buffer, uint8_t size )
 {
-    sx1276->read_buffer( sx1276->ctx,  0, buffer, size );
+    uint8_t addr = 0;
+    sx1276->spi_read( sx1276->ctx, &addr, 1, buffer, size );
 }
 
 void SX1276SetMaxPayloadLength( SX1276_t* sx1276, RadioModems_t modem, uint8_t max )

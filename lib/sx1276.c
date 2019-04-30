@@ -214,6 +214,8 @@ TimerEvent_t TxTimeoutTimer;
 TimerEvent_t RxTimeoutTimer;
 TimerEvent_t RxTimeoutSyncWord;
 
+
+
 /*
  * Radio driver functions implementation
  */
@@ -230,7 +232,7 @@ void SX1276Init( SX1276_t* sx1276, RadioEvents_t *events )
     TimerInit( &RxTimeoutTimer, SX1276OnTimeoutIrq );
     TimerInit( &RxTimeoutSyncWord, SX1276OnTimeoutIrq );
 
-    sx1276->reset( sx1276->ctx );
+    SX1276Reset( sx1276 );
 
     RxChainCalibration( sx1276 );
 
@@ -551,6 +553,19 @@ void SX1276SetRxConfig( SX1276_t *sx1276, RadioModems_t modem, uint32_t bandwidt
     }
 }
 
+// from sx1276-board.c in LoRaMac-node-master
+uint8_t SX1276GetPaSelect( uint32_t channel )
+{
+    if( channel < RF_MID_BAND_THRESH )
+    {
+        return RF_PACONFIG_PASELECT_PABOOST;
+    }
+    else
+    {
+        return RF_PACONFIG_PASELECT_RFO;
+    }
+}
+
 void SX1276SetTxConfig( SX1276_t *sx1276, RadioModems_t modem, int8_t power, uint32_t fdev,
                         uint32_t bandwidth, uint32_t datarate,
                         uint8_t coderate, uint16_t preambleLen,
@@ -565,7 +580,8 @@ void SX1276SetTxConfig( SX1276_t *sx1276, RadioModems_t modem, int8_t power, uin
     paConfig = SX1276Read( sx1276, REG_PACONFIG );
     paDac = SX1276Read( sx1276, REG_PADAC );
 
-    paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | SX1276GetPaSelect( sx1276, sx1276->settings.Channel );
+    // TODO: GetPaSelect is also board-specific
+    paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | SX1276GetPaSelect( sx1276->settings.Channel );
     paConfig = ( paConfig & RF_PACONFIG_MAX_POWER_MASK ) | 0x70;
 
     if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST )
@@ -846,7 +862,7 @@ void SX1276Send( SX1276_t* sx1276, uint8_t *buffer, uint8_t size )
             }
             else
             {
-                memcpy1( RxTxBuffer, buffer, size );
+                memcpy( RxTxBuffer, buffer, size );
                 sx1276->settings.FskPacketHandler.ChunkSize = 32;
             }
 
@@ -1202,6 +1218,21 @@ int16_t SX1276ReadRssi( SX1276_t* sx1276, RadioModems_t modem )
         break;
     }
     return rssi;
+}
+
+void SX1276Reset( SX1276_t* sx1276 )
+{
+    // Set RESET pin to 0
+    sx1276->set_reset(sx1276->ctx, 0);
+
+    // Wait 1 ms
+    sx1276->delay_ms(sx1276->ctx, 1);
+
+    // Configure RESET pin to high
+    sx1276->set_reset(sx1276->ctx, 1);
+
+    // Wait 6 ms
+    sx1276->delay_ms(sx1276->ctx, 6);
 }
 
 // This appears to be platform specific

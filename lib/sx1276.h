@@ -144,8 +144,6 @@ typedef struct
 }RadioSettings_t;
 
 // Function prototypes
-typedef void Reset( void* ctx );
-
 typedef void SpiWrite( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* out, uint16_t out_len );
 typedef void SpiRead( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* in, uint16_t in_len );
 
@@ -160,12 +158,12 @@ typedef void DelayMs( void* ctx, uint32_t ms );
 typedef struct SX1276_s
 {
     RadioSettings_t settings;
-    void* ctx;
-    Reset *reset;
-    DelayMs *delay_ms;
 
+    void* ctx;    
     SpiWrite *spi_write;
     SpiRead  *spi_read;
+    PinSet   *set_reset;
+    DelayMs  *delay_ms;
 
 } SX1276_t;
 

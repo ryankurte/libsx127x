@@ -144,12 +144,34 @@ typedef struct
 }RadioSettings_t;
 
 // Function prototypes
-typedef void SpiWrite( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* out, uint16_t out_len );
-typedef void SpiRead( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* in, uint16_t in_len );
 
-typedef void PinSet( void* ctx, bool value );
-typedef bool PinGet( void* ctx );
+/*!
+ * SpiWrite writes a prefix and data over SPI
+ * This returns 0 on success, -ve for error
+ */
+typedef int SpiWrite( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* out, uint16_t out_len );
 
+/*!
+ * SpiReadwrites a prefix and reads returned data over SPI
+ * This returns 0 on success, -ve for error
+ */
+typedef int SpiRead( void* ctx, uint8_t *prefix, uint16_t prefix_len, uint8_t* in, uint16_t in_len );
+
+/*!
+ * PinSet sets the value of an output pin
+ * This returns 0 on success, -ve for error
+ */
+typedef int PinSet( void* ctx, bool value );
+
+/*!
+ * PinGet fetches the value of an input pin
+ * and returns 0 for low, 1 for high, -ve for error
+ */
+typedef int PinGet( void* ctx );
+
+/*!
+ * DelayMs waits for the specified time in milliseconds
+ */
 typedef void DelayMs( void* ctx, uint32_t ms );
 
 /*!
@@ -159,7 +181,7 @@ typedef struct SX1276_s
 {
     RadioSettings_t settings;
 
-    void* ctx;    
+    void* ctx;
     SpiWrite *spi_write;
     SpiRead  *spi_read;
     PinSet   *set_reset;
